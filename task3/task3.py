@@ -5,42 +5,41 @@ Sentence Combination
 Implement a program in Python that combines two sentences into one, retaining the information from both sentences. The combined sentence should preserve the meaning and context of both input sentences.
 **Difficulty: Hard**
 """
-import nltk
-from nltk.tokenize import word_tokenize
+import spacy
+
+nlp = spacy.load('en_core_web_sm')
 
 
-def combine_sentences(sentence1, sentence2):
-    # Tokenize the input sentences
-    tokens1 = word_tokenize(sentence1)
-    tokens2 = word_tokenize(sentence2)
+def combine_sentences(s1, s2):
+    doc1 = nlp(s1)
+    doc2 = nlp(s2)
 
-    # Tag the tokens with their part-of-speech (POS) tags
-    tagged1 = nltk.pos_tag(tokens1)
-    tagged2 = nltk.pos_tag(tokens2)
-
-    # Find the main verb in the first sentence
-    main_verb1 = None
-    for i in range(len(tagged1)):
-        if tagged1[i][1].startswith('VB'):
-            main_verb1 = tagged1[i][0]
+    # Find the root verb of the first sentence
+    root1 = None
+    for token in doc1:
+        if token.head == token:
+            root1 = token
             break
 
-    # Find the main verb in the second sentence
-    main_verb2 = None
-    for i in range(len(tagged2)):
-        if tagged2[i][1].startswith('VB'):
-            main_verb2 = tagged2[i][0]
+    # Find the root verb of the second sentence
+    root2 = None
+    for token in doc2:
+        if token.head == token:
+            root2 = token
             break
-
-    # Combine the sentences based on their main verbs
-    if main_verb1 is not None and main_verb2 is not None:
-        if main_verb1 == main_verb2:
-            combined_sentence = sentence1.strip()[:-len(main_verb1)].strip() + ' ' + sentence2.strip()[
-                                                                                     len(main_verb2):].strip()
-        else:
-            combined_sentence = sentence1.strip() + ' ' + sentence2.strip()
+            
+    # Capitalize the first sent. and make the 2nd sent. lower-case 
+    s1 = s1.capitalize()
+    s2 = s2.lower()
+    
+    # Combine the sentences based on their roots
+    if root1 == root2:
+        return f"{s1[:-len(root1.text)].replace('.', '')}," \
+               f" {s2[root2.idx + len(root2.text):].replace('.', '')}.".replace(' i ', ' I ')
+    elif root1.pos_ == 'VERB' and root2.pos_ == 'VERB':
+        return f"{s1.replace('.', '')}, but {s2.replace('.', '')}.".replace(' i ', ' I ') \
+            if root1.lemma_ != root2.lemma_ else f"{s1.replace('.', '')} " \
+                                                 f"and {s2.replace('.', '')}.".replace(' i ', ' I ')
     else:
-        combined_sentence = sentence1.strip() + ' ' + sentence2.strip()
+        return f"{s1.replace('.', '')}, and {s2.replace('.', '')}.".replace(' i ', ' I ')
 
-    # Return the combined sentence
-    return combined_sentence
